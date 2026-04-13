@@ -9,7 +9,7 @@ dotenv.config();
 
 const app = express();
 app.use(cors({
-  origin: ["https://aurumchain-tracker-yobh.vercel.app", "https://aurumchain-tracker.vercel.app", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175"],
+  origin: ["https://aurumchain-tracker-client.vercel.app", "https://aurumchain-tracker.vercel.app", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175"],
   methods: ["GET", "POST"]
 }));
 app.use(express.json());
