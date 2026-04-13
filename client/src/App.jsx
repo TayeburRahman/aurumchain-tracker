@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'https://aurumchain-tracker.vercel.app';
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'https://aurumchain-tracker-server.vercel.app';
 
 function App() {
   const [data, setData] = useState([]);
@@ -145,8 +145,8 @@ function App() {
       <div className="quick-add" style={{ marginBottom: '24px', padding: '16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r2)' }}>
         <h3 style={{ fontSize: '12px', color: 'var(--text3)', textTransform: 'uppercase', marginBottom: '12px', fontFamily: 'DM Mono' }}>Quick Add Task</h3>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <select 
-            value={selectedStoryId} 
+          <select
+            value={selectedStoryId}
             onChange={(e) => setSelectedStoryId(e.target.value)}
             style={{ padding: '8px', borderRadius: 'var(--r)', border: '1px solid var(--border)', background: 'var(--surface2)', fontSize: '13px', outline: 'none' }}
           >
@@ -154,15 +154,15 @@ function App() {
               <option key={st.id} value={st.id}>{st.title}</option>
             ))}
           </select>
-          <input 
-            type="text" 
-            placeholder="New task description..." 
+          <input
+            type="text"
+            placeholder="New task description..."
             value={newTaskText}
             onChange={(e) => setNewTaskText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && (addTask(selectedStoryId, newTaskText), setNewTaskText(''))}
             style={{ flex: 1, padding: '8px 12px', borderRadius: 'var(--r)', border: '1px solid var(--border)', fontSize: '13px', outline: 'none' }}
           />
-          <button 
+          <button
             onClick={() => { addTask(selectedStoryId, newTaskText); setNewTaskText(''); }}
             style={{ padding: '8px 16px', background: 'var(--gold)', color: '#fff', border: 'none', borderRadius: 'var(--r)', cursor: 'pointer', fontWeight: '500' }}
           >
@@ -173,8 +173,8 @@ function App() {
 
       <div className="stats">
         <div className="stat"><div className="stat-num gold">{pct}%</div><div className="stat-lbl">Complete</div></div>
-        <div className="stat"><div className="stat-num">{done}<span style={{fontSize:'15px', color:'var(--text3)'}}>/{total}</span></div><div className="stat-lbl">Subtasks</div></div>
-        <div className="stat"><div className="stat-num">{storiesDone}<span style={{fontSize:'15px', color:'var(--text3)'}}>/{storiesTotal}</span></div><div className="stat-lbl">Stories done</div></div>
+        <div className="stat"><div className="stat-num">{done}<span style={{ fontSize: '15px', color: 'var(--text3)' }}>/{total}</span></div><div className="stat-lbl">Subtasks</div></div>
+        <div className="stat"><div className="stat-num">{storiesDone}<span style={{ fontSize: '15px', color: 'var(--text3)' }}>/{storiesTotal}</span></div><div className="stat-lbl">Stories done</div></div>
         <div className="stat"><div className="stat-num">{wip}</div><div className="stat-lbl">In progress</div></div>
       </div>
 
@@ -190,7 +190,7 @@ function App() {
 
       <div className="filter-row">
         {['all', 'todo', 'wip', 'done'].map(f => (
-          <button 
+          <button
             key={f}
             className={`filter-btn ${filter === f ? 'active' : ''}`}
             onClick={() => setFilter(f)}
@@ -233,10 +233,10 @@ function App() {
                         <span className={`story-dot dot-${st.status}`}></span>
                         <span className="story-id">{st.id}</span>
                         <span className="story-name">{st.title}</span>
-                        <select 
-                          className="story-status-sel" 
+                        <select
+                          className="story-status-sel"
                           value={st.status}
-                          onClick={(e) => e.stopPropagation()} 
+                          onClick={(e) => e.stopPropagation()}
                           onChange={(e) => setStoryStatus(st.id, e.target.value)}
                         >
                           <option value="todo">todo</option>
@@ -244,7 +244,7 @@ function App() {
                           <option value="done">done</option>
                         </select>
                         <span className="story-progress">{stDone}/{st.tasks.length}</span>
-                        <button 
+                        <button
                           className={`story-toggle-btn ${isStOpen ? 'open' : ''}`}
                           onClick={(e) => { e.stopPropagation(); toggleStory(st.id); }}
                         >
@@ -257,7 +257,7 @@ function App() {
                             <div className={`cb ${t.completed ? 'done' : ''}`} onClick={() => toggleTask(t.id)}></div>
                             <span className={`subtask-text ${t.completed ? 'done' : ''}`}>{t.text}</span>
                             <span className="subtask-id" style={{ marginRight: '10px' }}>{t.id}</span>
-                            <button 
+                            <button
                               onClick={() => deleteTask(t.id)}
                               style={{ border: 'none', background: 'none', color: 'var(--pink)', cursor: 'pointer', fontSize: '18px', padding: '0 4px', lineHeight: '1' }}
                               title="Delete task"
