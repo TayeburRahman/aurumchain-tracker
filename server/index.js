@@ -180,6 +180,10 @@ const seedDB = async () => {
 };
 seedDB();
 
+app.get('/', (req, res) => {
+  res.json({ message: 'AurumChain Tracker API' });
+});
+
 app.get('/api/data', async (req, res) => {
   try {
     const epics = await Epic.find();
