@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AurumChain — M2 Task Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #f0efe9;
+    --surface3: #e5e3db;
+    --border: rgba(0,0,0,0.09);
+    --border2: rgba(0,0,0,0.16);
+    --text: #18180f;
+    --text2: #3a3a30;
+    --text3: #888078;
+    --gold: #9a7428;
+    --gold2: #b5882c;
+    --gold-dim: rgba(155,116,40,0.1);
+    --green: #1a7a4a;
+    --green-dim: rgba(26,122,74,0.1);
+    --blue: #1558b8;
+    --blue-dim: rgba(21,88,184,0.1);
+    --amber: #a85a10;
+    --amber-dim: rgba(168,90,16,0.1);
+    --pink: #962848;
+    --pink-dim: rgba(150,40,72,0.1);
+    --r: 7px;
+    --r2: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .page { max-width: 900px; margin: 0 auto; padding: 44px 24px 80px; }
+
+  .header { margin-bottom: 36px; padding-bottom: 28px; border-bottom: 1.5px solid var(--border2); }
+
+  .header-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--gold2); margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .header-eyebrow::before {
+    content: ''; display: inline-block; width: 18px; height: 1.5px; background: var(--gold2);
+  }
+
+  .header-title {
+    font-family: 'Instrument Serif', serif;
+    font-size: 38px; font-weight: 400; color: var(--text);
+    line-height: 1.1; margin-bottom: 6px;
+  }
+  .header-title em { font-style: italic; color: var(--gold2); }
+
+  .header-sub { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; }
+
+  .stats {
+    display: grid; grid-template-columns: repeat(4,1fr);
+    gap: 10px; margin-bottom: 24px;
+  }
+
+  .stat {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r2); padding: 16px 12px; text-align: center;
+  }
+
+  .stat-num {
+    font-family: 'Instrument Serif', serif; font-size: 26px;
+    color: var(--text); line-height: 1; margin-bottom: 4px;
+  }
+  .stat-num.gold { color: var(--gold2); }
+
+  .stat-lbl {
+    font-size: 11px; color: var(--text3);
+    font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: 0.07em;
+  }
+
+  .main-progress { margin-bottom: 24px; }
+
+  .progress-labels {
+    display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px;
+  }
+  .progress-label-left { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; }
+  .progress-pct { font-family: 'Instrument Serif', serif; font-size: 18px; color: var(--gold2); }
+
+  .progress-track { height: 4px; background: var(--surface3); border-radius: 99px; overflow: hidden; }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold2));
+    border-radius: 99px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  .filter-row { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+
+  .filter-btn {
+    font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.05em;
+    padding: 5px 14px; border-radius: 99px; border: 1px solid var(--border2);
+    background: var(--surface); color: var(--text3); cursor: pointer;
+    transition: all 0.15s; text-transform: uppercase;
+  }
+  .filter-btn:hover { color: var(--text2); background: var(--surface2); }
+  .filter-btn.active {
+    background: var(--gold-dim); color: var(--gold2);
+    border-color: rgba(155,116,40,0.4); font-weight: 500;
+  }
+
+  .epics { display: flex; flex-direction: column; gap: 8px; }
+
+  .epic {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r2); overflow: hidden;
+  }
+
+  .epic-header {
+    display: flex; align-items: center; gap: 11px;
+    padding: 13px 16px; cursor: pointer; user-select: none; transition: background 0.12s;
+  }
+  .epic-header:hover { background: var(--surface2); }
+
+  .epic-arrow {
+    width: 14px; height: 14px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; color: var(--text3); transition: transform 0.2s; font-size: 9px;
+  }
+  .epic-arrow.open { transform: rotate(90deg); }
+
+  .epic-pill {
+    font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 500;
+    letter-spacing: 0.09em; text-transform: uppercase;
+    padding: 2px 9px; border-radius: 99px; flex-shrink: 0;
+  }
+  .pill-e1 { background: var(--green-dim); color: var(--green); }
+  .pill-e2 { background: var(--blue-dim); color: var(--blue); }
+  .pill-e3 { background: var(--amber-dim); color: var(--amber); }
+  .pill-e4 { background: var(--pink-dim); color: var(--pink); }
+
+  .epic-title { flex: 1; font-size: 14px; font-weight: 500; color: var(--text); }
+  .epic-counter { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text3); white-space: nowrap; }
+
+  .epic-mini-bar-wrap { height: 2px; background: var(--surface3); }
+  .epic-mini-bar-fill { height: 2px; transition: width 0.4s; }
+  .bar-e1 { background: var(--green); }
+  .bar-e2 { background: var(--blue); }
+  .bar-e3 { background: var(--amber); }
+  .bar-e4 { background: var(--pink); }
+
+  .stories { display: none; }
+  .stories.open { display: block; }
+
+  .story { border-top: 1px solid var(--border); }
+
+  .story-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px 10px 38px; cursor: pointer; transition: background 0.1s;
+  }
+  .story-row:hover { background: #fafaf7; }
+
+  .story-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .dot-todo { background: var(--surface3); border: 1.5px solid var(--border2); }
+  .dot-wip  { background: var(--amber); }
+  .dot-done { background: var(--green); }
+
+  .story-id { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); white-space: nowrap; }
+  .story-name { flex: 1; font-size: 13px; color: var(--text2); }
+
+  .story-status-sel {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text2); border-radius: 5px; padding: 3px 6px;
+    cursor: pointer; outline: none; -webkit-appearance: none; appearance: none;
+  }
+  .story-status-sel:focus { border-color: var(--gold2); }
+
+  .story-progress { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); white-space: nowrap; }
+
+  .story-toggle-btn {
+    width: 20px; height: 20px; border: 1px solid var(--border2); border-radius: 4px;
+    background: var(--surface); color: var(--text3); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 300; flex-shrink: 0; transition: all 0.15s; line-height: 1;
+  }
+  .story-toggle-btn:hover { background: var(--surface2); color: var(--text2); }
+  .story-toggle-btn.open { color: var(--gold2); border-color: rgba(155,116,40,0.4); background: var(--gold-dim); }
+
+  .subtasks { display: none; background: #fafaf7; }
+  .subtasks.open { display: block; }
+
+  .subtask {
+    display: flex; align-items: flex-start; gap: 11px;
+    padding: 8px 16px 8px 56px; border-top: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  .subtask:hover { background: #f5f4f0; }
+
+  .cb {
+    width: 15px; height: 15px; border-radius: 4px; border: 1.5px solid var(--border2);
+    cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    margin-top: 2px; background: var(--surface); transition: all 0.15s;
+  }
+  .cb:hover { border-color: var(--green); }
+  .cb.done { background: var(--green); border-color: var(--green); }
+  .cb.done::after {
+    content: ''; display: block; width: 7px; height: 4px;
+    border-left: 1.5px solid #fff; border-bottom: 1.5px solid #fff;
+    transform: rotate(-45deg) translate(0.5px,-0.5px);
+  }
+
+  .subtask-text { flex: 1; font-size: 13px; color: var(--text2); line-height: 1.5; }
+  .subtask-text.done { text-decoration: line-through; color: var(--text3); }
+
+  .subtask-id {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    color: var(--text3); white-space: nowrap; flex-shrink: 0; margin-top: 3px;
+  }
+
+  .deferred-banner {
+    margin-top: 28px; border: 1px dashed rgba(155,116,40,0.35);
+    border-radius: var(--r2); padding: 14px 18px;
+    display: flex; align-items: center; gap: 12px; background: var(--gold-dim);
+  }
+  .deferred-label {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--gold2); white-space: nowrap; font-weight: 500;
+  }
+  .deferred-text { font-size: 13px; color: var(--text3); }
+
+  @media (max-width: 600px) {
+    .header-title { font-size: 28px; }
+    .stats { grid-template-columns: repeat(2,1fr); }
+    .story-id { display: none; }
+    .subtask-id { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="header">
+    <div class="header-eyebrow">AurumChain · Phase 2 · Milestone 2</div>
+    <h1 class="header-title">Blockchain <em>Deliverables</em></h1>
+    <div class="header-sub">Generated 2026-04-12 · Solana / Anchor / Next.js / SPL</div>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="main-progress">
+    <div class="progress-labels">
+      <span class="progress-label-left">Overall subtask completion</span>
+      <span class="progress-pct" id="pct-label">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="prog-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="filter-row">
+    <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+    <button class="filter-btn" onclick="setFilter('todo',this)">To do</button>
+    <button class="filter-btn" onclick="setFilter('wip',this)">In progress</button>
+    <button class="filter-btn" onclick="setFilter('done',this)">Done</button>
+  </div>
+
+  <div class="epics" id="epics"></div>
+
+  <div class="deferred-banner">
+    <span class="deferred-label">Deferred → M3</span>
+    <span class="deferred-text">AC-BC-EPIC-05 — Allocation &amp; Distribution on-chain program (create_distribution, execute_distribution, DistributionEpochAccount, burn_or_adjust)</span>
+  </div>
+</div>
+
+<script>
+const DATA=[
+  {id:'E1',title:'Project Registry on-chain program',pill:'Epic 1',pillClass:'pill-e1',barClass:'bar-e1',stories:[
+    {id:'AC-BC-101',title:'Project Account Initialization',tasks:[
+      {id:'AC-BC-101-1',text:'Define ProjectAccount PDA schema (project_account.rs)'},
+      {id:'AC-BC-101-2',text:'Implement create_project instruction'},
+      {id:'AC-BC-101-3',text:'Write unit tests for create_project'},
+    ]},
+    {id:'AC-BC-102',title:'Project Status Control — Pause / Unpause',tasks:[
+      {id:'AC-BC-102-1',text:'Implement update_project_status instruction'},
+      {id:'AC-BC-102-2',text:'Write unit tests for update_project_status'},
+    ]},
+    {id:'AC-BC-103',title:'ControlAccount & Authority Management',tasks:[
+      {id:'AC-BC-103-1',text:'Define and initialize ControlAccount PDA'},
+      {id:'AC-BC-103-2',text:'Implement initialize_control instruction'},
+      {id:'AC-BC-103-3',text:'Implement transfer_authority instruction'},
+    ]},
+    {id:'AC-BC-104',title:'Project Registry Devnet Deployment',tasks:[
+      {id:'AC-BC-104-1',text:'Build and verify program binary (anchor build)'},
+      {id:'AC-BC-104-2',text:'Deploy to Devnet from client-controlled wallet'},
+      {id:'AC-BC-104-3',text:'Initialize ControlAccount on Devnet via RPC'},
+      {id:'AC-BC-104-4',text:'Update .env and programs.ts with deployed program ID'},
+    ]},
+  ]},
+  {id:'E2',title:'Compliance / Transfer Control on-chain program',pill:'Epic 2',pillClass:'pill-e2',barClass:'bar-e2',stories:[
+    {id:'AC-BC-201',title:'Investor Eligibility Account — on-chain allow-list',tasks:[
+      {id:'AC-BC-201-1',text:'Define InvestorEligibilityAccount PDA schema'},
+      {id:'AC-BC-201-2',text:'Implement record_verified_wallet instruction'},
+      {id:'AC-BC-201-3',text:'Implement refresh_eligibility instruction'},
+      {id:'AC-BC-201-4',text:'Write unit tests for eligibility management'},
+    ]},
+    {id:'AC-BC-202',title:'Transfer Validation Gate',tasks:[
+      {id:'AC-BC-202-1',text:'Implement transfer_validate instruction with 6 reason codes'},
+      {id:'AC-BC-202-2',text:'Write transfer validation tests (all 5 failure scenarios)'},
+    ]},
+    {id:'AC-BC-203',title:'Investment Subscription Account',tasks:[
+      {id:'AC-BC-203-1',text:'Define InvestmentSubscriptionAccount PDA schema'},
+      {id:'AC-BC-203-2',text:'Implement subscribe_investment instruction'},
+      {id:'AC-BC-203-3',text:'Implement finalize_subscription instruction'},
+      {id:'AC-BC-203-4',text:'Write subscription lifecycle tests'},
+    ]},
+    {id:'AC-BC-204',title:'Compliance Program Devnet Deployment',tasks:[
+      {id:'AC-BC-204-1',text:'Build and verify compliance program binary'},
+      {id:'AC-BC-204-2',text:'Deploy to Devnet'},
+      {id:'AC-BC-204-3',text:'Seed Devnet with 3 test eligibility wallets'},
+      {id:'AC-BC-204-4',text:'Update .env and programs.ts with program ID'},
+    ]},
+  ]},
+  {id:'E3',title:'Wallet Connection Setup',pill:'Epic 3',pillClass:'pill-e3',barClass:'bar-e3',stories:[
+    {id:'AC-BC-301',title:'Wallet Provider Configuration',tasks:[
+      {id:'AC-BC-301-1',text:'Install wallet adapter dependencies (package.json)'},
+      {id:'AC-BC-301-2',text:'Create WalletProviders wrapper component'},
+      {id:'AC-BC-301-3',text:'Integrate WalletProviders into app/layout.tsx'},
+      {id:'AC-BC-301-4',text:'Create useWalletConnection custom hook'},
+    ]},
+    {id:'AC-BC-302',title:'Wallet UI Component',tasks:[
+      {id:'AC-BC-302-1',text:'Build WalletButton component (3 states: idle, connecting, connected)'},
+      {id:'AC-BC-302-2',text:'Build WalletStatusBadge component'},
+      {id:'AC-BC-302-3',text:'Integrate WalletButton into global Navbar'},
+      {id:'AC-BC-302-4',text:'Write component tests (WalletButton.test.tsx)'},
+    ]},
+    {id:'AC-BC-303',title:'Signed-Message Wallet Linking — backend integration',tasks:[
+      {id:'AC-BC-303-1',text:'Create useWalletLink hook'},
+      {id:'AC-BC-303-2',text:'Implement wallet challenge / sign flow (walletLinkService.ts)'},
+      {id:'AC-BC-303-3',text:'Trigger link flow post-connection in useWalletConnection'},
+      {id:'AC-BC-303-4',text:'Write integration tests for wallet link flow'},
+    ]},
+  ]},
+  {id:'E4',title:'Web3.js Integration Layer',pill:'Epic 4',pillClass:'pill-e4',barClass:'bar-e4',stories:[
+    {id:'AC-BC-401',title:'Anchor Client Setup & IDL Integration',tasks:[
+      {id:'AC-BC-401-1',text:'Copy and version-control generated IDL files'},
+      {id:'AC-BC-401-2',text:'Generate TypeScript types from IDL'},
+      {id:'AC-BC-401-3',text:'Create Anchor program client factory (anchorClients.ts)'},
+      {id:'AC-BC-401-4',text:'Create Solana connection config singleton (connection.ts)'},
+    ]},
+    {id:'AC-BC-402',title:'Project Registry Integration Service',tasks:[
+      {id:'AC-BC-402-1',text:'Implement ProjectRegistryService class (4 methods)'},
+      {id:'AC-BC-402-2',text:'Implement PDA utility functions for Project Registry'},
+      {id:'AC-BC-402-3',text:'Create useProjectRegistry React hook'},
+      {id:'AC-BC-402-4',text:'Write service tests'},
+    ]},
+    {id:'AC-BC-403',title:'Compliance Integration Service',tasks:[
+      {id:'AC-BC-403-1',text:'Implement ComplianceService class (6 methods)'},
+      {id:'AC-BC-403-2',text:'Implement PDA utilities for Compliance Program'},
+      {id:'AC-BC-403-3',text:'Create useWalletEligibility React hook'},
+      {id:'AC-BC-403-4',text:'Create transfer validation utility (transferValidator.ts)'},
+      {id:'AC-BC-403-5',text:'Write service and hook tests'},
+    ]},
+    {id:'AC-BC-404',title:'Transaction Builder & Confirmation Utilities',tasks:[
+      {id:'AC-BC-404-1',text:'Create sendAndConfirmTransaction wrapper (transactionUtils.ts)'},
+      {id:'AC-BC-404-2',text:'Create useSolanaTransaction hook'},
+      {id:'AC-BC-404-3',text:'Create event listener utility (eventListener.ts)'},
+    ]},
+    {id:'AC-BC-405',title:'Blockchain Interface Migration — Solana-native',tasks:[
+      {id:'AC-BC-405-1',text:'Update blockchain-interfaces.ts — replace viem types with Solana'},
+      {id:'AC-BC-405-2',text:'Implement SolanaTokenizationService'},
+      {id:'AC-BC-405-3',text:'Update getBlockchainServices factory'},
+    ]},
+    {id:'AC-BC-406',title:'Backend RPC Integration — server-side Web3.js',tasks:[
+      {id:'AC-BC-406-1',text:'Create server-side Anchor provider factory (serverAnchorProvider.ts)'},
+      {id:'AC-BC-406-2',text:'Create backend blockchain service entry point'},
+      {id:'AC-BC-406-3',text:'Create API helper for /investments/confirm endpoint'},
+      {id:'AC-BC-406-4',text:'Create API helper stub for /admin/distributions/{id}/execute'},
+    ]},
+  ]},
+];
+
+let taskState={},storyStatus={},epicOpen={},storyOpen={};
+let currentFilter='all';
+
+function sk(k){return 'aurumchain_m2_'+k;}
+function save(){
+  try{
+    localStorage.setItem(sk('t'),JSON.stringify(taskState));
+    localStorage.setItem(sk('s'),JSON.stringify(storyStatus));
+    localStorage.setItem(sk('eo'),JSON.stringify(epicOpen));
+    localStorage.setItem(sk('so'),JSON.stringify(storyOpen));
+  }catch(e){}
+}
+function load(){
+  try{
+    taskState=JSON.parse(localStorage.getItem(sk('t'))||'{}');
+    storyStatus=JSON.parse(localStorage.getItem(sk('s'))||'{}');
+    epicOpen=JSON.parse(localStorage.getItem(sk('eo'))||'{}');
+    storyOpen=JSON.parse(localStorage.getItem(sk('so'))||'{}');
+  }catch(e){taskState={};storyStatus={};epicOpen={};storyOpen={};}
+}
+
+function toggleTask(id){taskState[id]=!taskState[id];save();render();}
+function setStoryStatus(id,v){storyStatus[id]=v;save();render();}
+function toggleEpic(id){epicOpen[id]=!epicOpen[id];save();render();}
+function toggleStory(id){storyOpen[id]=!storyOpen[id];save();render();}
+function setFilter(f,btn){
+  currentFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function totals(){
+  let total=0,done=0,wip=0,storiesDone=0,storiesTotal=0;
+  DATA.forEach(ep=>ep.stories.forEach(st=>{
+    total+=st.tasks.length;
+    done+=st.tasks.filter(t=>taskState[t.id]).length;
+    const s=storyStatus[st.id]||'todo';
+    if(s==='wip')wip++;
+    if(s==='done')storiesDone++;
+    storiesTotal++;
+  }));
+  return{total,done,wip,storiesDone,storiesTotal};
+}
+
+function storyVisible(st){
+  if(currentFilter==='all')return true;
+  return(storyStatus[st.id]||'todo')===currentFilter;
+}
+
+function render(){
+  const{total,done,wip,storiesDone,storiesTotal}=totals();
+  const pct=total===0?0:Math.round(done/total*100);
+
+  document.getElementById('pct-label').textContent=pct+'%';
+  document.getElementById('prog-fill').style.width=pct+'%';
+
+  document.getElementById('stats').innerHTML=`
+    <div class="stat"><div class="stat-num gold">${pct}%</div><div class="stat-lbl">Complete</div></div>
+    <div class="stat"><div class="stat-num">${done}<span style="font-size:15px;color:var(--text3)">/${total}</span></div><div class="stat-lbl">Subtasks</div></div>
+    <div class="stat"><div class="stat-num">${storiesDone}<span style="font-size:15px;color:var(--text3)">/${storiesTotal}</span></div><div class="stat-lbl">Stories done</div></div>
+    <div class="stat"><div class="stat-num">${wip}</div><div class="stat-lbl">In progress</div></div>
+  `;
+
+  let html='';
+  DATA.forEach(ep=>{
+    const allT=ep.stories.flatMap(s=>s.tasks);
+    const doneT=allT.filter(t=>taskState[t.id]).length;
+    const epPct=allT.length===0?0:Math.round(doneT/allT.length*100);
+    const isOpen=epicOpen[ep.id]!==false;
+    const vis=ep.stories.filter(storyVisible);
+    if(currentFilter!=='all'&&vis.length===0)return;
+
+    html+=`<div class="epic">
+      <div class="epic-header" onclick="toggleEpic('${ep.id}')">
+        <span class="epic-arrow ${isOpen?'open':''}">&#9654;</span>
+        <span class="epic-pill ${ep.pillClass}">${ep.pill}</span>
+        <span class="epic-title">${ep.title}</span>
+        <span class="epic-counter">${doneT}/${allT.length}</span>
+      </div>
+      <div class="epic-mini-bar-wrap">
+        <div class="epic-mini-bar-fill ${ep.barClass}" style="width:${epPct}%"></div>
+      </div>
+      <div class="stories ${isOpen?'open':''}">`;
+
+    ep.stories.forEach(st=>{
+      if(!storyVisible(st))return;
+      const stDone=st.tasks.filter(t=>taskState[t.id]).length;
+      const stat=storyStatus[st.id]||'todo';
+      const isStOpen=!!storyOpen[st.id];
+
+      html+=`<div class="story">
+        <div class="story-row" onclick="toggleStory('${st.id}')">
+          <span class="story-dot dot-${stat}"></span>
+          <span class="story-id">${st.id}</span>
+          <span class="story-name">${st.title}</span>
+          <select class="story-status-sel" onclick="event.stopPropagation()" onchange="setStoryStatus('${st.id}',this.value)">
+            <option value="todo" ${stat==='todo'?'selected':''}>todo</option>
+            <option value="wip" ${stat==='wip'?'selected':''}>in progress</option>
+            <option value="done" ${stat==='done'?'selected':''}>done</option>
+          </select>
+          <span class="story-progress">${stDone}/${st.tasks.length}</span>
+          <button class="story-toggle-btn ${isStOpen?'open':''}" onclick="event.stopPropagation();toggleStory('${st.id}')">${isStOpen?'−':'+'}</button>
+        </div>
+        <div class="subtasks ${isStOpen?'open':''}">`;
+
+      st.tasks.forEach(t=>{
+        const chk=!!taskState[t.id];
+        html+=`<div class="subtask">
+          <div class="cb ${chk?'done':''}" onclick="toggleTask('${t.id}')"></div>
+          <span class="subtask-text ${chk?'done':''}">${t.text}</span>
+          <span class="subtask-id">${t.id}</span>
+        </div>`;
+      });
+
+      html+=`</div></div>`;
+    });
+    html+=`</div></div>`;
+  });
+
+  document.getElementById('epics').innerHTML=html;
+}
+
+load();
+DATA.forEach(ep=>{if(epicOpen[ep.id]===undefined)epicOpen[ep.id]=true;});
+render();
+</script>
+</body>
+</html>
