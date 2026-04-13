@@ -14,14 +14,10 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/server/index.js"
+      "destination": "server/index.js"
     },
     {
-      "source": "/socket.io/(.*)",
-      "destination": "/server/index.js"
-    },
-    {
-      "source": "/((?!api|socket.io).*)$",
+      "source": "/((?!api).*)$",
       "destination": "/client/$1"
     }
   ]
