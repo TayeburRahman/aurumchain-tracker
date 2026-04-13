@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import { io } from 'socket.io-client';
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'https://aurumchain-tracker.vercel.app';
-const socket = io(SERVER_URL);
 
 function App() {
   const [data, setData] = useState([]);
@@ -10,58 +8,90 @@ function App() {
   const [epicOpen, setEpicOpen] = useState({});
   const [storyOpen, setStoryOpen] = useState({});
 
-  useEffect(() => {
+  const fetchData = () => {
     fetch(`${SERVER_URL}/api/data`)
       .then(res => res.json())
       .then(initialData => {
         setData(initialData);
-        if (initialData.length > 0) {
+        if (initialData.length > 0 && Object.keys(epicOpen).length === 0) {
           const initialEpicOpen = {};
           initialData.forEach(ep => { initialEpicOpen[ep.id] = true; });
           setEpicOpen(initialEpicOpen);
         }
-      });
+      })
+      .catch(err => console.error("Error fetching data:", err));
+  };
 
-    socket.on('task-updated', ({ taskId, epic }) => {
-      setData(prev => prev.map(e => e.id === epic.id ? epic : e));
-    });
-
-    socket.on('story-status-updated', ({ storyId, status, epic }) => {
-      setData(prev => prev.map(e => e.id === epic.id ? epic : e));
-    });
-
-    socket.on('task-added', ({ storyId, epic }) => {
-      setData(prev => prev.map(e => e.id === epic.id ? epic : e));
-    });
-
-    socket.on('task-deleted', ({ taskId, epic }) => {
-      setData(prev => prev.map(e => e.id === epic.id ? epic : e));
-    });
-
-    return () => {
-      socket.off('task-updated');
-      socket.off('story-status-updated');
-      socket.off('task-added');
-      socket.off('task-deleted');
-    };
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 5000); // Poll every 5 seconds
+    return () => clearInterval(interval);
   }, []);
 
-  const toggleTask = (taskId) => {
-    socket.emit('toggle-task', { taskId });
+  const toggleTask = async (taskId) => {
+    try {
+      const res = await fetch(`${SERVER_URL}/api/tasks/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId })
+      });
+      const result = await res.json();
+      if (result.success) {
+        setData(prev => prev.map(e => e.id === result.epic.id ? result.epic : e));
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const setStoryStatus = (storyId, status) => {
-    socket.emit('update-story-status', { storyId, status });
+  const setStoryStatus = async (storyId, status) => {
+    try {
+      const res = await fetch(`${SERVER_URL}/api/stories/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storyId, status })
+      });
+      const result = await res.json();
+      if (result.success) {
+        setData(prev => prev.map(e => e.id === result.epic.id ? result.epic : e));
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const addTask = (storyId, text) => {
+  const addTask = async (storyId, text) => {
     if (!text.trim()) return;
-    socket.emit('add-task', { storyId, text });
+    try {
+      const res = await fetch(`${SERVER_URL}/api/tasks/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ storyId, text })
+      });
+      const result = await res.json();
+      if (result.success) {
+        setData(prev => prev.map(e => e.id === result.epic.id ? result.epic : e));
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const deleteTask = (taskId) => {
+  const deleteTask = async (taskId) => {
     if (window.confirm('Are you sure you want to delete this task?')) {
-      socket.emit('delete-task', { taskId });
+      try {
+        const res = await fetch(`${SERVER_URL}/api/tasks/delete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ taskId })
+        });
+        const result = await res.json();
+        if (result.success) {
+          setData(prev => prev.map(e => e.id === result.epic.id ? result.epic : e));
+        }
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 

@@ -1,6 +1,5 @@
 const express = require('express');
 const http = require('http');
-const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
@@ -16,12 +15,6 @@ app.use(cors({
 app.use(express.json());
 
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: ["https://aurumchain-tracker-yobh.vercel.app", "https://aurumchain-tracker.vercel.app", "http://localhost:5173", "http://localhost:5174", "http://localhost:5175"],
-    methods: ["GET", "POST"]
-  }
-});
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/aurumchain-tracker';
 const PORT = process.env.PORT || 5000;
 
@@ -196,83 +189,87 @@ app.get('/api/data', async (req, res) => {
   }
 });
 
-io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
-
-  socket.on('toggle-task', async ({ taskId }) => {
-    try {
-      const epic = await Epic.findOne({ 'stories.tasks.id': taskId });
-      if (epic) {
-        epic.stories.forEach(story => {
-          story.tasks.forEach(task => {
-            if (task.id === taskId) {
-              task.completed = !task.completed;
-            }
-          });
-        });
-        await epic.save();
-        io.emit('task-updated', { taskId, epic });
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  });
-
-  socket.on('update-story-status', async ({ storyId, status }) => {
-    try {
-      const epic = await Epic.findOne({ 'stories.id': storyId });
-      if (epic) {
-        epic.stories.forEach(story => {
-          if (story.id === storyId) {
-            story.status = status;
+app.post('/api/tasks/toggle', async (req, res) => {
+  const { taskId } = req.body;
+  try {
+    const epic = await Epic.findOne({ 'stories.tasks.id': taskId });
+    if (epic) {
+      epic.stories.forEach(story => {
+        story.tasks.forEach(task => {
+          if (task.id === taskId) {
+            task.completed = !task.completed;
           }
         });
-        await epic.save();
-        io.emit('story-status-updated', { storyId, status, epic });
-      }
-    } catch (err) {
-      console.error(err);
+      });
+      await epic.save();
+      res.json({ success: true, epic });
+    } else {
+      res.status(404).json({ error: 'Task not found' });
     }
-  });
-
-  socket.on('add-task', async ({ storyId, text }) => {
-    try {
-      const epic = await Epic.findOne({ 'stories.id': storyId });
-      if (epic) {
-        epic.stories.forEach(story => {
-          if (story.id === storyId) {
-            const newId = `${storyId}-${story.tasks.length + 1}-${Math.floor(Math.random() * 1000)}`;
-            story.tasks.push({ id: newId, text, completed: false });
-          }
-        });
-        await epic.save();
-        io.emit('task-added', { storyId, epic });
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  });
-
-  socket.on('delete-task', async ({ taskId }) => {
-    try {
-      const epic = await Epic.findOne({ 'stories.tasks.id': taskId });
-      if (epic) {
-        epic.stories.forEach(story => {
-          story.tasks = story.tasks.filter(task => task.id !== taskId);
-        });
-        await epic.save();
-        io.emit('task-deleted', { taskId, epic });
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  });
-
-  socket.on('disconnect', () => {
-    console.log('User disconnected:');
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-server.listen(PORT, () => {
+app.post('/api/stories/status', async (req, res) => {
+  const { storyId, status } = req.body;
+  try {
+    const epic = await Epic.findOne({ 'stories.id': storyId });
+    if (epic) {
+      epic.stories.forEach(story => {
+        if (story.id === storyId) {
+          story.status = status;
+        }
+      });
+      await epic.save();
+      res.json({ success: true, epic });
+    } else {
+      res.status(404).json({ error: 'Story not found' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/tasks/add', async (req, res) => {
+  const { storyId, text } = req.body;
+  try {
+    const epic = await Epic.findOne({ 'stories.id': storyId });
+    if (epic) {
+      epic.stories.forEach(story => {
+        if (story.id === storyId) {
+          const newId = `${storyId}-${story.tasks.length + 1}-${Math.floor(Math.random() * 1000)}`;
+          story.tasks.push({ id: newId, text, completed: false });
+        }
+      });
+      await epic.save();
+      res.json({ success: true, epic });
+    } else {
+      res.status(404).json({ error: 'Story not found' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/tasks/delete', async (req, res) => {
+  const { taskId } = req.body;
+  try {
+    const epic = await Epic.findOne({ 'stories.tasks.id': taskId });
+    if (epic) {
+      epic.stories.forEach(story => {
+        story.tasks = story.tasks.filter(task => task.id !== taskId);
+      });
+      await epic.save();
+      res.json({ success: true, epic });
+    } else {
+      res.status(404).json({ error: 'Task not found' });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
