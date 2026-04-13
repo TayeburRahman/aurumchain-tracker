@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 
-const socket = io('http://localhost:5000');
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'https://aurumchain-tracker.vercel.app';
+const socket = io(SERVER_URL);
 
 function App() {
   const [data, setData] = useState([]);
@@ -10,7 +11,7 @@ function App() {
   const [storyOpen, setStoryOpen] = useState({});
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/data')
+    fetch(`${SERVER_URL}/api/data`)
       .then(res => res.json())
       .then(initialData => {
         setData(initialData);
